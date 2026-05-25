@@ -16,6 +16,51 @@
         .toast-ui.show { transform: translateY(0); }
         .user-nav-group { display: flex; align-items: center; gap: 10px; }
         #auth-user-name { font-weight: 600; font-size: 14px; }
+
+        /* Additive Styles for Upgraded Infrastructure */
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .announcements-expanded-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            padding: 2rem 5%;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .tracker-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .tracker-step.active {
+            color: var(--text-main);
+            font-weight: 600;
+        }
+        .tracker-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 6px auto;
+            font-size: 11px;
+            z-index: 2;
+            position: relative;
+            transition: background 0.3s, color 0.3s;
+        }
+        .tracker-step.active .tracker-dot {
+            background: var(--success);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -42,14 +87,21 @@
         </div>
     </header>
 
-    <section style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white; padding: 4rem 5%; text-align: center; border-bottom: 4px solid #10b981;">
+    <section style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white; padding: 4rem 5%; text-align: center; border-bottom: 4px solid #10b981; position: relative;">
         <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">Welcome to Mwamini Trading</h1>
         <p style="font-size: 1.2rem; opacity: 0.9; margin-bottom: 0.5rem;">We are delighted to serve you with the finest selection of commodities.</p>
+        
+        <div id="live-activity-indicator" style="margin-top: 1.5rem; display: inline-flex; align-items: center; gap: 10px; background: rgba(0, 0, 0, 0.25); padding: 6px 18px; border-radius: 30px; font-size: 13px; backdrop-filter: blur(4px);">
+            <span style="width: 9px; height: 9px; background: #10b981; border-radius: 50%; display: inline-block; animation: pulse 2s infinite;"></span>
+            <span id="live-online-count">Synchronizing real-time analytics...</span>
+        </div>
     </section>
 
-    <section style="padding: 1rem 5%; text-align: center; border-bottom: 1px solid var(--border-color); font-size: 0.8rem; color: var(--text-muted);">
-        Trusted Global Supply Chain • ISO 9001 Certified • Secure Dispatch Verified
+    <section style="padding: 1rem 5%; text-align: center; border-bottom: 1px solid var(--border-color); font-size: 0.8rem; color: var(--text-muted); font-weight: 500; letter-spacing: 0.5px;">
+        Trusted Global Supply Chain • Secure Dispatch Verified
     </section>
+
+    <section id="public-announcements-section" class="announcements-expanded-grid" style="display: none;"></section>
 
     <div class="search-filter-bar">
         <input type="text" id="search-input" class="search-input" style="flex:2;" placeholder="Search our delicious selection (e.g. Rice, Fertilizer)...">
@@ -124,24 +176,39 @@
     </div>
 
     <div class="modal" id="user-dashboard-modal">
-        <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-content" style="max-width: 850px; width: 90%;">
             <button type="button" class="close-modal-btn" onclick="closeUserDashboard()">✕</button>
             <h2 style="margin-bottom: 1.5rem;">My Account</h2>
             
-            <div style="display: flex; gap: 2rem;">
-                <div style="flex: 1; border-right: 1px solid var(--border-color); padding-right: 1rem;">
+            <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 250px; border-right: 1px solid var(--border-color); padding-right: 1rem;">
                     <h3>Profile Information</h3>
-                    <img id="dash-avatar" class="user-avatar-preview" style="margin-top:1rem;" src="" alt="Profile">
+                    <div style="text-align: center; margin: 1rem 0;">
+                        <img id="dash-avatar" class="user-avatar-preview" style="width:90px; height:90px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);" src="" alt="Profile">
+                        
+                        <div style="margin-top: 10px;">
+                            <label for="dashboard-avatar-file-input" class="btn" style="font-size: 11px; padding: 4px 10px; cursor: pointer; background: var(--border-color); color: var(--text-main); display: inline-block; border-radius: 6px;">Change Photo</label>
+                            <input type="file" id="dashboard-avatar-file-input" accept="image/jpeg,image/png,image/gif,image/webp" style="display: none;">
+                            <div id="avatar-upload-status-text" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; height: 14px;"></div>
+                        </div>
+                    </div>
                     <p><strong>Name:</strong> <span id="dash-name"></span></p>
                     <p><strong>Email:</strong> <span id="dash-email"></span></p>
                     <p><strong>Phone:</strong> <span id="dash-phone"></span></p>
                     <p><strong>Destination:</strong> <span id="dash-dest"></span></p>
                 </div>
-                <div style="flex: 2; padding-left: 1rem;">
-                    <h3>Order History</h3>
+                <div style="flex: 2; min-width: 320px; padding-left: 1rem;">
+                    <h3>Order History & Dispatch Pipeline</h3>
                     <div style="overflow-x: auto; margin-top: 1rem;">
-                        <table class="dashboard-table">
-                            <thead><tr><th>Item</th><th>Qty</th><th>Date</th><th>Status</th></tr></thead>
+                        <table class="dashboard-table" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+                                    <th style="padding: 8px;">Item</th>
+                                    <th style="padding: 8px;">Qty</th>
+                                    <th style="padding: 8px;">Date</th>
+                                    <th style="padding: 8px;">Status</th>
+                                </tr>
+                            </thead>
                             <tbody id="user-orders-body"></tbody>
                         </table>
                     </div>
@@ -224,6 +291,7 @@
         let localProductsCache = [];
         let currentUser = null;
         let currentUserProfile = null;
+        let globalPresenceChannel = null;
         const exchangeRates = { USD: 1, RWF: 1290, RUB: 91.5 };
 
         document.addEventListener("DOMContentLoaded", async () => {
@@ -232,13 +300,162 @@
             initializeOrderFulfillmentEngine();
             initializeFeedbackEngine();
             fetchAnnouncements();
+            fetchExpandedAnnouncements();
             await checkUserSession();
+            setupLivePresenceTracker();
+            initializePhotoUploadEngine();
             
             const root = document.documentElement;
             document.getElementById('theme-toggle').addEventListener('click', () => {
                 root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
             });
         });
+
+        // --- WebSocket Real-Time Presence Synchronization ---
+        function setupLivePresenceTracker() {
+            if (!window.supabase) return;
+            if (globalPresenceChannel) globalPresenceChannel.unsubscribe();
+
+            const uniquePresenceKey = currentUser ? currentUser.id : 'client-' + Math.random().toString(36).substring(2, 11);
+            globalPresenceChannel = window.supabase.channel('presence-global', {
+                config: { presence: { key: uniquePresenceKey } }
+            });
+
+            globalPresenceChannel.on('presence', { event: 'sync' }, () => {
+                const presenceState = globalPresenceChannel.presenceState();
+                const totalOnlineCount = Object.keys(presenceState).length || 1;
+                document.getElementById('live-online-count').innerHTML = `<strong>${totalOnlineCount}</strong> clients online live • Operational indicators synchronized`;
+            });
+
+            globalPresenceChannel.subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    await globalPresenceChannel.track({
+                        online_at: new Date().toISOString(),
+                        authenticated: !!currentUser
+                    });
+                }
+            });
+        }
+
+        // --- Public Hero Expansion Rendering Engine ---
+        async function fetchExpandedAnnouncements() {
+            const container = document.getElementById('public-announcements-section');
+            if (!container || !window.supabase) return;
+
+            try {
+                const { data, error } = await window.supabase.from('announcements')
+                    .select('*')
+                    .eq('active', true)
+                    .order('created_at', { ascending: false });
+
+                if (error || !data || data.length === 0) {
+                    container.style.display = 'none';
+                    return;
+                }
+
+                container.style.display = 'grid';
+                container.innerHTML = `
+                    <div style="grid-column: 1 / -1; margin-bottom: 0.5rem;">
+                        <h3 style="margin:0 0 6px 0; font-size:18px; font-weight:700; color:var(--text-main);">System Dispatches & Strategic Bulletins</h3>
+                        <p style="margin:0; font-size:13px; color:var(--text-muted);">Real-time procurement alerts, global notices, and market updates.</p>
+                    </div>
+                `;
+
+                data.forEach(item => {
+                    const cardType = item.type || 'Announcement';
+                    const cardTitle = item.title || 'Platform Notice';
+                    const imageUrl = item.image_url || '';
+                    
+                    let badgeStyles = 'background: var(--accent); color: white;';
+                    if(cardType === 'Notice') badgeStyles = 'background: var(--warning); color: black;';
+                    if(cardType === 'Promotion') badgeStyles = 'background: var(--success); color: white;';
+
+                    const cardNode = document.createElement('div');
+                    cardNode.style = `background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; box-shadow: 0 4px 6px rgba(0,0,0,0.02);`;
+                    
+                    let mediaBlock = '';
+                    if (imageUrl) {
+                        mediaBlock = `<img src="${imageUrl}" loading="lazy" style="width:100%; height:130px; object-fit:cover; border-radius:8px;" onerror="this.style.display='none'">`;
+                    }
+
+                    cardNode.innerHTML = `
+                        ${mediaBlock}
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="${badgeStyles} font-size:9px; font-weight:bold; text-transform:uppercase; padding:2px 6px; border-radius:4px;">${cardType}</span>
+                            <span style="font-size:11px; color:var(--text-muted);">${new Date(item.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <h4 style="margin:0; font-size:14px; font-weight:600; color:var(--text-main);">${cardTitle}</h4>
+                        <p style="margin:0; font-size:12px; line-height:1.5; color:var(--text-muted); flex-grow:1;">${item.content}</p>
+                    `;
+                    container.appendChild(cardNode);
+                });
+            } catch (err) {
+                console.error("Hero expansion fail:", err);
+            }
+        }
+
+        // --- Secure Profile Photo Upload & Sanitization Center ---
+        function initializePhotoUploadEngine() {
+            const inputElement = document.getElementById('dashboard-avatar-file-input');
+            if(!inputElement) return;
+
+            inputElement.addEventListener('change', async (event) => {
+                const targetFile = event.target.files[0];
+                if (!targetFile) return;
+
+                const approvedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                if (!approvedTypes.includes(targetFile.type)) {
+                    alert("Validation Error: Only standard images (JPEG, PNG, GIF, WEBP) are valid payloads.");
+                    inputElement.value = '';
+                    return;
+                }
+
+                if (targetFile.size > 2 * 1024 * 1024) {
+                    alert("Validation Error: Maximum size constraints restricted to a 2MB threshold.");
+                    inputElement.value = '';
+                    return;
+                }
+
+                const uploadStatusText = document.getElementById('avatar-upload-status-text');
+                uploadStatusText.innerText = "Transmitting secured object...";
+                
+                const extension = targetFile.name.split('.').pop();
+                const sanitizedFileName = `avatar-${currentUser.id}-${Date.now()}.${extension}`;
+
+                try {
+                    const { error: uploadError } = await window.supabase.storage.from('avatars').upload(sanitizedFileName, targetFile);
+                    if (uploadError) throw uploadError;
+
+                    const { data: linkData } = window.supabase.storage.from('avatars').getPublicUrl(sanitizedFileName);
+                    const freshAvatarUrl = linkData.publicUrl;
+
+                    const { error: dbError } = await window.supabase.from('profiles')
+                        .update({ avatar_url: freshAvatarUrl })
+                        .eq('id', currentUser.id);
+
+                    if (dbError) throw dbError;
+
+                    document.getElementById('dash-avatar').src = freshAvatarUrl;
+                    if(currentUserProfile) currentUserProfile.avatar_url = freshAvatarUrl;
+                    
+                    uploadStatusText.innerText = "Synchronized successfully.";
+                    showToast("Profile image updated successfully.");
+                } catch (error) {
+                    uploadStatusText.innerText = "Transmission aborted.";
+                    alert("Storage engine rejected payload: " + error.message);
+                } finally {
+                    inputElement.value = '';
+                }
+            });
+        }
+
+        // --- Visual Pipeline Order Management Engine ---
+        window.toggleVisualOrderTracker = (id) => {
+            const rowElement = document.getElementById(`order-tracker-panel-${id}`);
+            if (rowElement) {
+                rowElement.style.display = rowElement.style.display === 'none' ? 'table-row' : 'none';
+            }
+        };
 
         // --- Auth & User Profile Logic ---
         async function checkUserSession() {
@@ -261,6 +478,7 @@
                 } else {
                     showUserNav(data.full_name || currentUser.email);
                 }
+                setupLivePresenceTracker();
             }
         }
 
@@ -318,7 +536,6 @@
                     });
                     if (error) throw error;
                     
-                    // Update the automatically created profile with extra details
                     if(data.user) {
                         await window.supabase.from('profiles').update({
                             full_name: document.getElementById('reg-name').value.trim(),
@@ -349,6 +566,7 @@
             currentUser = null;
             currentUserProfile = null;
             showGuestNav();
+            setupLivePresenceTracker();
             showToast("Logged out.");
         }
 
@@ -382,33 +600,79 @@
             }
         });
 
-        // --- User Dashboard Logic ---
+        // --- High Fidelity User Dashboard & Tracker Allocation ---
         async function openUserDashboard() {
             if(!currentUserProfile) return;
             document.getElementById('dash-name').innerText = currentUserProfile.full_name || 'N/A';
-            document.getElementById('dash-email').innerText = currentUserProfile.email || 'N/A';
+            document.getElementById('dash-email').innerText = currentUser.email || 'N/A';
             document.getElementById('dash-phone').innerText = currentUserProfile.phone || 'N/A';
             document.getElementById('dash-dest').innerText = currentUserProfile.delivery_destination || 'N/A';
             document.getElementById('dash-avatar').src = currentUserProfile.avatar_url || 'https://via.placeholder.com/80';
             
             const tbody = document.getElementById('user-orders-body');
-            tbody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4">Loading profile history...</td></tr>';
             document.getElementById('user-dashboard-modal').classList.add('active');
 
-            const { data: orders } = await window.supabase.from('orders').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+            const { data: orders } = await window.supabase.from('orders')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .order('created_at', { ascending: false });
+                
             tbody.innerHTML = '';
             if(orders && orders.length > 0) {
                 orders.forEach(o => {
-                    const date = new Date(o.created_at).toLocaleDateString();
-                    tbody.innerHTML += `<tr><td>${o.product_title}</td><td>${o.quantity}</td><td>${date}</td><td><span class="badge" style="background:#64748b; color:white;">${o.status}</span></td></tr>`;
+                    const orderDate = new Date(o.created_at).toLocaleDateString();
+                    const cleanStatus = o.status || 'Pending';
+                    
+                    let statusColor = '#64748b';
+                    if (cleanStatus === 'Processing') statusColor = '#3b82f6';
+                    if (cleanStatus === 'Approved') statusColor = '#f59e0b';
+                    if (cleanStatus === 'Completed') statusColor = '#10b981';
+                    if (cleanStatus === 'Cancelled') statusColor = '#ef4444';
+
+                    tbody.innerHTML += `
+                        <tr style="cursor:pointer; border-bottom:1px solid var(--border-color);" onclick="toggleVisualOrderTracker('${o.id}')">
+                            <td style="padding:10px 8px;"><strong>${o.product_title}</strong><div style="font-size:10px; color:var(--text-muted);">Click to track pipeline</div></td>
+                            <td style="padding:10px 8px;">${o.quantity}</td>
+                            <td style="padding:10px 8px;">${orderDate}</td>
+                            <td style="padding:10px 8px;"><span class="badge" style="background:${statusColor}; color:white; padding:3px 8px; border-radius:4px; font-size:11px;">${cleanStatus}</span></td>
+                        </tr>
+                        <tr id="order-tracker-panel-${o.id}" style="display:none; background:rgba(0,0,0,0.01);">
+                            <td colspan="4" style="padding:1rem; border-bottom:1px solid var(--border-color);">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:1rem; position:relative; padding-top:10px;">
+                                    <div style="position:absolute; top:20px; left:12%; right:12%; height:3px; background:#e2e8f0; z-index:1;">
+                                        <div style="height:100%; background:#10b981; width:${cleanStatus === 'Pending' ? '0' : cleanStatus === 'Processing' ? '33%' : cleanStatus === 'Approved' ? '66%' : cleanStatus === 'Completed' ? '100%' : '0'}%;"></div>
+                                    </div>
+                                    
+                                    <div class="tracker-step ${['Pending', 'Processing', 'Approved', 'Completed'].includes(cleanStatus) ? 'active' : ''}">
+                                        <div class="tracker-dot">1</div>
+                                        <span>Pending</span>
+                                    </div>
+                                    <div class="tracker-step ${['Processing', 'Approved', 'Completed'].includes(cleanStatus) ? 'active' : ''}">
+                                        <div class="tracker-dot">2</div>
+                                        <span>Processing</span>
+                                    </div>
+                                    <div class="tracker-step ${['Approved', 'Completed'].includes(cleanStatus) ? 'active' : ''}">
+                                        <div class="tracker-dot">3</div>
+                                        <span>Approved</span>
+                                    </div>
+                                    <div class="tracker-step ${['Completed', 'Cancelled'].includes(cleanStatus) ? 'active' : ''}">
+                                        <div class="tracker-dot" style="${cleanStatus === 'Cancelled' ? 'background:#ef4444; color:white;' : ''}">4</div>
+                                        <span>${cleanStatus === 'Cancelled' ? 'Cancelled' : 'Completed'}</span>
+                                    </div>
+                                </div>
+                                ${o.notes ? `<div style="font-size:11px; color:var(--text-muted); background:var(--bg-surface); padding:8px; border-radius:6px; border:1px dashed var(--border-color);"><strong>Freight Instructions:</strong> ${o.notes}</div>` : ''}
+                            </td>
+                        </tr>
+                    `;
                 });
             } else {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No orders found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem; color:var(--text-muted);">No orders found.</td></tr>';
             }
         }
         function closeUserDashboard() { document.getElementById('user-dashboard-modal').classList.remove('active'); }
 
-        // --- Announcements Logic ---
+        // --- Announcements Banner Logic ---
         async function fetchAnnouncements() {
             const { data } = await window.supabase.from('announcements').select('*').eq('active', true).order('created_at', { ascending: false }).limit(1);
             if (data && data.length > 0) {
@@ -548,7 +812,6 @@
             document.getElementById('form-product-title-val').value = title;
             document.getElementById('modal-product-title').innerText = `Request Allocation: ${title}`;
             
-            // Auto-fill if user is logged in
             if(currentUserProfile) {
                 document.getElementById('cust-name').value = currentUserProfile.full_name || '';
                 document.getElementById('cust-phone').value = currentUserProfile.phone || '';
@@ -626,6 +889,12 @@
                         localProductsCache = data;
                         document.getElementById("search-input").dispatchEvent(new Event("input"));
                     }
+                }).subscribe();
+
+            window.supabase.channel('public-announcements-sync')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
+                    fetchAnnouncements();
+                    fetchExpandedAnnouncements();
                 }).subscribe();
         }
     </script>
